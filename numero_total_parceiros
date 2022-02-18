@@ -1,0 +1,1 @@
+SELECT COUNT(DISTINCT(num_bds)) FROM bds_engajamento.dim_instituicao
