@@ -1,9 +1,12 @@
+# user_id and number of pageviews by user_id
 WITH aux AS (SELECT
     user_id,
     CAST(SUM(pageviews) AS STRING) AS pageviews
-FROM `bds_engajamento.fato_pageviews` 
+FROM `pageviews` 
 GROUP BY user_id),
 
+# distribution of pageviews
+# pageviews and counting of pageviews
 aux_1 AS (
 SELECT
     CAST(pageviews AS INT) AS pageviews,
@@ -12,6 +15,7 @@ FROM aux
 GROUP BY pageviews
 ORDER BY pageviews),
 
+# pageviews and cumulative percentage sum of counting pageviews
 SELECT
     pageviews,
     SUM(count) OVER(ORDER BY pageviews ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)/SUM(count) OVER() AS total
