@@ -1,0 +1,1 @@
+SELECT COUNT(DISTINCT(id)) FROM bds_engajamento.dim_books
