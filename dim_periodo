@@ -1,0 +1,28 @@
+SELECT 
+    ROW_NUMBER() OVER() AS sk_periodo,
+    day,
+    CASE EXTRACT(DAYOFWEEK FROM day)
+        WHEN 1 THEN 7
+        WHEN 2 THEN 1
+        WHEN 3 THEN 2
+        WHEN 4 THEN 3
+        WHEN 5 THEN 4
+        WHEN 6 THEN 5
+        WHEN 7 THEN 6 END AS num_dayofweek,
+    CASE EXTRACT(DAYOFWEEK FROM day) 
+        WHEN 1 THEN 'Domingo'
+        WHEN 2 THEN 'Segunda'
+        WHEN 3 THEN 'Terça'
+        WHEN 4 THEN 'Quarta'
+        WHEN 5 THEN 'Quinta'
+        WHEN 6 THEN 'Sexta'
+        WHEN 7 THEN 'Sábado' END AS dayofweek,
+    DATE_TRUNC(day, WEEK) AS week,
+    EXTRACT(WEEK FROM day) AS num_week,
+    DATE_TRUNC(day, MONTH) AS month,
+    EXTRACT(MONTH FROM day) AS num_month,
+    EXTRACT(YEAR FROM day) AS year,
+    CURRENT_DATETIME('America/Sao_Paulo') AS loaded_at
+FROM UNNEST(
+    GENERATE_DATE_ARRAY(DATE('2021-01-01'), CURRENT_DATE(), INTERVAL 1 DAY)
+) AS day
