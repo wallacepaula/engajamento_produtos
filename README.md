@@ -20,3 +20,8 @@ As fatos criadas foram:
 - Pageviews (páginas visualizadas)
 
 ![image](https://user-images.githubusercontent.com/54243780/155637591-860b5726-b8e1-442c-bcd4-8e8a971c2913.png)
+
+# Melhorias
+- Criar tabela para definir quem é usuário interno
+- Fazer update de dim_funil_parceiro para incluir todos os tipos de funis
+- 
