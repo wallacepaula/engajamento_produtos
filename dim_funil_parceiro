@@ -1,0 +1,21 @@
+WITH funis AS (SELECT 
+    id AS funil_id,
+    name,
+    url_title
+FROM pipedrive.pipelines
+WHERE id IN (
+    12, #[BDS Onboarding]
+    17, #[BDS Ongoing]
+    26, #[BDS na planta]
+    27, #[BDS órgãos públicos]
+    37, #MARC21 - Migração BDS
+    38, #Cupons - Migração BDS
+    39, #JWT - Migração BDS
+    40 #LTI - Migração BDS 
+))
+
+SELECT
+    ROW_NUMBER() OVER() AS sk_funil_parceiro,
+    *,
+    CURRENT_DATETIME('America/Sao_Paulo') AS loaded_at
+FROM funis
