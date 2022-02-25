@@ -1,0 +1,60 @@
+WITH user_agent AS (SELECT
+    DISTINCT lower(context_user_agent) AS user_agent,
+    device_category AS device
+FROM bds_back_track.realizou_login
+UNION ALL 
+SELECT
+    DISTINCT lower(context_user_agent) AS user_agent,
+    device_category AS device
+FROM bds_back_track.da_abriu_livro),
+
+unique_user_agent AS (SELECT 
+    DISTINCT user_agent.user_agent,
+    device
+FROM user_agent
+)
+
+SELECT
+    ROW_NUMBER() OVER() AS sk_user_agent,
+    user_agent,
+    device,
+    CASE WHEN REGEXP_CONTAINS(user_agent, 'chrome') THEN 'Chrome' 
+        WHEN REGEXP_CONTAINS(user_agent, 'firefox') THEN 'Firefox'
+        WHEN REGEXP_CONTAINS(user_agent, 'crios') AND REGEXP_CONTAINS(user_agent, 'mobile') THEN 'Chrome Mobile'
+        WHEN REGEXP_CONTAINS(user_agent, 'safari') AND REGEXP_CONTAINS(user_agent, 'version') AND REGEXP_CONTAINS(user_agent, 'mobile') THEN 'Mobile Safari'
+        WHEN REGEXP_CONTAINS(user_agent, 'safari') AND REGEXP_CONTAINS(user_agent, 'version') THEN 'Safari'
+        ELSE 'Unknow' END AS browser,
+    CASE WHEN REGEXP_CONTAINS(user_agent, 'chrome') THEN INITCAP(SPLIT(REGEXP_EXTRACT(user_agent, r'chrome+.+'), " ")[OFFSET(0)])
+        WHEN REGEXP_CONTAINS(user_agent, 'firefox') THEN INITCAP(REGEXP_EXTRACT(user_agent, r'firefox+/+[0-9]+\.+[0-9]'))
+        WHEN REGEXP_CONTAINS(user_agent, 'crios') AND REGEXP_CONTAINS(user_agent, 'mobile') THEN INITCAP(SPLIT(REGEXP_EXTRACT(user_agent, r'crios+.+'), " ")[OFFSET(0)])
+        WHEN REGEXP_CONTAINS(user_agent, 'safari') AND REGEXP_CONTAINS(user_agent, 'version') AND REGEXP_CONTAINS(user_agent, 'mobile') THEN INITCAP(SPLIT(REGEXP_EXTRACT(user_agent, r'version+.+'), " ")[OFFSET(0)])
+        WHEN REGEXP_CONTAINS(user_agent, 'safari') AND REGEXP_CONTAINS(user_agent, 'version') THEN INITCAP(SPLIT(REGEXP_EXTRACT(user_agent, r'version+.+'), " ")[OFFSET(0)])
+        ELSE 'Unknow' END AS browser_version,
+    CASE WHEN REGEXP_CONTAINS(user_agent, 'windows') THEN 'Windows'
+        WHEN REGEXP_CONTAINS(user_agent, 'android') THEN 'Android'
+        WHEN REGEXP_CONTAINS(user_agent, 'macintosh') THEN 'Mac'
+        WHEN REGEXP_CONTAINS(user_agent, 'linux') THEN 'Linux'
+        WHEN REGEXP_CONTAINS(user_agent, 'cros') THEN 'Chrome Os'
+        WHEN REGEXP_CONTAINS(user_agent, 'ipad') THEN 'Ipad'
+        WHEN REGEXP_CONTAINS(user_agent, 'iphone') THEN 'iPhone'
+        ELSE 'Unknow' END AS os,
+    CASE WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.3') THEN 'Windows 8.1 64-bit' 
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 10.0; win64; x64') THEN 'Windows 10 64-bit' 
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.1; win64; x64; rv:90.0') THEN 'Windows Server 2008 R2 / 7 64-bit'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.1') THEN 'Windows Server 2008 R2 / 7'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 5.1; rv:52.0') THEN 'Windows XP'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 10.0') THEN 'Windows 10'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.2; wow64') THEN 'Windows 8 64-bit'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.2') THEN 'Windows 8'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.0') THEN 'Windows Vista'
+        WHEN REGEXP_CONTAINS(user_agent, 'android') THEN INITCAP(REGEXP_EXTRACT(user_agent, r'android+\s+[0-9]+'))
+        WHEN REGEXP_CONTAINS(user_agent, 'macintosh; intel mac os x') THEN UPPER(REGEXP_EXTRACT(user_agent, r'os x+\s+[0-9]+'))
+        WHEN REGEXP_CONTAINS(user_agent, 'linux x86_64') THEN 'Linux 64-bit'
+        WHEN REGEXP_CONTAINS(user_agent, 'cros') THEN 'Chrome OS'
+        WHEN REGEXP_CONTAINS(user_agent, 'windows nt 6.2; win64; x64') THEN 'Windows 8 64-bit'
+        WHEN REGEXP_CONTAINS(user_agent, 'linux i686') THEN 'Ubuntu chromium'
+        WHEN REGEXP_CONTAINS(user_agent, 'cpu os') THEN CONCAT('iOS ', SPLIT(REGEXP_EXTRACT(user_agent, r'cpu os+\s+[0-9]+'), ' ')[OFFSET(2)])
+        WHEN REGEXP_CONTAINS(user_agent, 'cpu iphone os') THEN CONCAT('iOS ', SPLIT(REGEXP_EXTRACT(user_agent, r'cpu iphone os+\s+[0-9]+'), ' ')[OFFSET(3)])
+        ELSE 'Unknow' END AS os_version,
+    CURRENT_DATETIME("America/Sao_Paulo") AS loaded_at
+FROM unique_user_agent
