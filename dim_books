@@ -1,0 +1,31 @@
+WITH books AS (SELECT
+  DISTINCT 
+  CAST(`crm_views.products_view`.productcode AS INT) AS cae,
+  REPLACE(`crm_views.bibliotecadigital_view`.bibliotecadigitalno, "BDS", "") AS num_bds,
+
+FROM
+  `crm_views.products_view`
+INNER JOIN
+  `crm_views.crmentityrel_view`
+ON
+  `crm_views.products_view`.productid = `crm_views.crmentityrel_view`.relcrmid
+INNER JOIN
+  `crm_views.bibliotecadigital_view`
+ON
+  `crm_views.crmentityrel_view`.crmid = `crm_views.bibliotecadigital_view`.bibliotecadigitalid
+WHERE
+  `crm_views.crmentityrel_view`.module = 'Bibliotecadigital'
+  AND `crm_views.crmentityrel_view`.relmodule = 'Products'),
+
+total_books AS (
+SELECT DISTINCT
+  CAST(cae AS INT) AS cae,
+  CAST(books.num_bds AS INT) as num_bds
+FROM books
+INNER JOIN bds_engajamento_staging.dim_instituicao ON dim_instituicao.num_bds = books.num_bds)
+
+SELECT 
+  row_number() over() AS sk_books,
+  *,
+  CURRENT_DATETIME("America/Sao_Paulo") AS loaded_at
+  FROM total_books 
