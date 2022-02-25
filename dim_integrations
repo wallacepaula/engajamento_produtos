@@ -1,0 +1,7 @@
+WITH integrations AS (SELECT DISTINCT tipo_integracao AS integration FROM `symbolic-wind-235918.bds_back_track.realizou_login`)
+
+SELECT 
+    ROW_NUMBER() OVER() AS sk_integration,
+    integration,
+    CURRENT_DATETIME("America/Sao_Paulo") AS loaded_at
+FROM integrations
