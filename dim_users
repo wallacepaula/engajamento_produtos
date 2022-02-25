@@ -1,0 +1,38 @@
+WITH fusion_users AS (SELECT 
+    DISTINCT CAST(user_id AS STRING) AS user_id,
+    REPLACE(libraries.bds, 'BDS', "") AS num_bds
+FROM 
+    bds_views.fusion_users
+JOIN 
+    bds_views.libraries 
+ON 
+    fusion_users.library_code = libraries.key
+WHERE REGEXP_CONTAINS(lower(external_id), 'platos')=False
+    OR REGEXP_CONTAINS(lower(external_id), 'somoseducacao')=False
+    OR REGEXP_CONTAINS(lower(external_id), 'saber')=False
+    OR REGEXP_CONTAINS(lower(external_id), 'appprova')=False
+    OR REGEXP_CONTAINS(lower(external_id), '@saraiva')=False
+    OR external_id != 'mallugomes1@gmail.com'
+    OR external_id != 'jorge_monteiros@hotmail.com'
+    OR external_id != 'alexandre.lemonteiro@gmail.com'
+    OR external_id != 'rcassiaandrade97@gmail.com'
+    OR external_id != 'dralexgoncalves@hotmail.com'
+    OR external_id != 'lima.isa2@gmail.com'
+    AND is_team_member=FALSE),
+
+users AS (
+SELECT 
+    DISTINCT user_id,
+    CAST(fusion_users.num_bds AS INT) AS num_bds
+FROM fusion_users
+INNER JOIN 
+    bds_engajamento.dim_instituicao 
+ON dim_instituicao.num_bds = fusion_users.num_bds
+)
+
+SELECT 
+    ROW_NUMBER() OVER() as sk_user,
+    *,
+    CURRENT_DATETIME("America/Sao_Paulo") As loaded_at
+FROM users
+
