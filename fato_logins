@@ -1,0 +1,20 @@
+WITH logins AS (SELECT 
+    dim_periodo.sk_periodo,
+    dim_instituicao.sk_instituicao,
+    dim_users.sk_user,
+    dim_user_agent.sk_user_agent,
+    dim_integrations.sk_integration,
+    id AS login_id
+FROM 
+    bds_back_track.realizou_login
+INNER JOIN bds_engajamento.dim_periodo ON dim_periodo.day = DATE(realizou_login.timestamp)
+INNER JOIN bds_engajamento.dim_users ON dim_users.user_id = realizou_login.user_id
+INNER JOIN bds_engajamento.dim_instituicao ON dim_instituicao.num_bds = dim_users.num_bds
+INNER JOIN bds_engajamento.dim_user_agent ON dim_user_agent.user_agent = lower(realizou_login.context_user_agent)
+INNER JOIN bds_engajamento.dim_integrations ON dim_integrations.integration = realizou_login.tipo_integracao)
+
+SELECT 
+    ROW_NUMBER() OVER() AS sk_login,
+    *,
+    CURRENT_DATETIME("America/Sao_Paulo") AS loaded_at
+FROM logins
