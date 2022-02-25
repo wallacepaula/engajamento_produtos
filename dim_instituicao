@@ -1,0 +1,66 @@
+WITH nested AS (SELECT 
+    deals.sigla,
+    DATE(deals.inicio_de_contrato) AS inicio_contrato,
+    DATE(deals.fim_do_contrato) AS fim_contrato,
+    DATE(deals.inicio_da_parceria_solucao_) AS inicio_parceria,
+    REGEXP_EXTRACT_ALL(REPLACE(bds_numero_da_biblioteca, ' ', ''), '[0-9]+|') AS num_bds,
+    CASE WHEN 
+        UPPER(bds_acesso_simultaneo) = 'SIM' THEN True
+        ELSE False END AS acesso_simultaneo,
+    CASE WHEN 
+        DATE(deals.fim_do_contrato) >= CURRENT_DATE() THEN True
+        ELSE False END AS contrato_ativo,
+    CASE WHEN
+        UPPER(bds_migracao_concluida_) = 'NÃO' THEN False
+        ELSE True END as usam_novabds
+FROM 
+    pipedrive.deals
+INNER JOIN 
+    bds_engajamento.dim_funil_parceiro 
+ON 
+    deals.funil = dim_funil_parceiro.funil_id),
+
+unnested AS (SELECT
+    num_bds,
+    CONCAT('[', num_bds, '] ', sigla) AS sigla,
+    inicio_contrato,
+    fim_contrato,
+    inicio_parceria,
+    acesso_simultaneo,
+    contrato_ativo,
+    usam_novabds
+FROM nested
+CROSS JOIN UNNEST(nested.num_bds) AS num_bds
+WHERE usam_novabds=True),
+
+instituicoes AS (SELECT 
+    num_bds,
+    sigla,
+    inicio_contrato,
+    fim_contrato,
+    inicio_parceria,
+    acesso_simultaneo,
+    contrato_ativo,
+    usam_novabds,
+    ROW_NUMBER() OVER(PARTITION BY sigla ORDER BY num_bds DESC) AS RN
+FROM unnested
+WHERE num_bds NOT IN ('')),
+
+unique_instituicoes AS (SELECT DISTINCT
+    CAST(instituicoes.num_bds AS INT) AS num_bds,
+    instituicoes.sigla,
+    instituicoes.inicio_contrato,
+    instituicoes.fim_contrato,
+    instituicoes.inicio_parceria,
+    acesso_simultaneo,
+    contrato_ativo,
+    usam_novabds
+FROM instituicoes
+WHERE RN=1
+ORDER BY num_bds)
+
+SELECT 
+    ROW_NUMBER() OVER() AS sk_instituicao,
+    *,
+    CURRENT_DATETIME("America/Sao_Paulo") AS loaded_at
+FROM unique_instituicoes
